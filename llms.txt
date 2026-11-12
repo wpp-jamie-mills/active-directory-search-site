@@ -1,0 +1,90 @@
+# Entra Directory Search for Claude Desktop
+
+> Ask Claude about your Entra ID directory. It finds people, groups and distribution lists, reads account status, email aliases and reporting lines, and never changes anything. A Claude Desktop extension (.mcpb) for macOS, version 1.6.1.
+
+## Install (agents)
+
+1. Continue only if `uname -s` prints `Darwin` and `/Applications/Claude.app` exists. Otherwise tell the user it needs a Mac with Claude Desktop 2.7032.0 or later.
+2. Run the installer with this one command. It downloads the extension, checks its SHA-256 (nothing changes before the check passes) and opens Claude Desktop's install dialog. With no terminal it never prompts, and `--no-wait` makes it exit once the dialog is open. It exits non-zero, with the reason on stderr, if anything fails; exit 0 means it finished its steps, not that Claude Desktop installed the extension.
+
+```bash
+curl -fsSL https://wpp-jamie-mills.github.io/active-directory-search-site/install.sh | ADSEARCH_INSTALL_TTY=/dev/null bash -s -- --no-wait
+```
+
+3. Ask the user to click Install in the dialog Claude Desktop opened (they can leave its settings blank: they choose their work account the first time they sign in), and to switch the extension on if Claude Desktop shows it off (Settings > Extensions; one click, then wait a few seconds). You can't do these for them. Never ask for a password or a token: nothing in the install needs one.
+
+### Verify
+
+Run the installer again with `--status` (after `bash -s --`):
+
+```bash
+curl -fsSL https://wpp-jamie-mills.github.io/active-directory-search-site/install.sh | bash -s -- --status
+```
+
+It should show `Ready: yes` (the `Extension:` line at the `Latest:` version with `enabled`, and `Server: running since …`). Otherwise its `Next:` line says the one thing left to do: tell the user, then check again. When it is ready, ask the user to start a new chat in Claude Desktop (chats opened while the extension was off never see its tools) and say "Sign in to Entra Directory Search" to Claude; only the user can enter the sign-in code.
+
+### Updates
+
+The extension keeps itself up to date. Once a day it checks this site for a newer version, and when there is one Claude shows the user an update card in Claude Desktop. Update now downloads the new version, checks its SHA-256 and opens Claude Desktop's install dialog; it is installed only when the user clicks Install there. Not now hides that version for a week. You can't click these for the user, and nothing installs until they do. To update straight away, run the same install command again (the user still clicks Install). Settings and the sign-in are kept.
+
+## What it can and can't do
+
+- **Can:** search users by name, read a user's profile, account status and expiry, email aliases, groups, manager,
+  direct reports and peers; read groups and expand distribution lists, nested lists included; check membership;
+  search recently deleted users. Temporary access passes and conditional access policies are read only when your
+  account holds a role that allows it, such as Security Reader.
+- **Can't:** create, change or delete anything: users, groups, memberships, policies or authentication methods. It
+  reads only what your own account may read.
+- **Your data:** directory details Claude reads are sent to Anthropic as part of your conversation, under your Claude
+  account's terms.
+
+## Profiles and settings
+
+The extension's settings (Settings > Extensions > Entra Directory Search for Claude Desktop > Configure) are all
+optional:
+
+| Setting | What it does |
+|---|---|
+| Default sign-in email | Allows only this account for the default profile. Blank: any work account you sign in with |
+| Default Entra tenant | Your organisation's tenant id or domain. Blank: Microsoft's work-account sign-in |
+| WPP sign-in email | Allows only this account for the WPP profile |
+| WPP Entra tenant | Turns on the `wpp` profile, for example `wpp.com`. Blank: no WPP profile |
+| Check for updates | Checks the landing page once a day and offers new versions (on by default) |
+
+Each profile signs in separately and keeps its own sign-in in your macOS Keychain. Ask Claude to use the WPP
+directory and it passes `profile: "wpp"`; otherwise it uses the default account.
+
+## Troubleshooting
+
+| What you see | What to do |
+|---|---|
+| The installer says "Checksum mismatch — nothing was installed" | A new release can take up to about 10 minutes to reach every server. Wait, then run the install command again |
+| The installer says Claude Desktop is missing or too old | Install or update Claude Desktop (2.7032.0 or later), open it once, then run the install command again |
+| Claude has no directory tools | Switch the extension on (Settings > Extensions), then start a new chat: chats opened while it was off never see its tools |
+| Claude says sign-in is needed | Expected the first time and when Microsoft wants a new sign-in: follow the card |
+| "You signed in as X, but this profile is configured for Y" | Your browser was signed in to another account. Sign out there or use a private window, then ask Claude to sign in again |
+| The code expired | Ask Claude to sign in again for a new code |
+| A user or group isn't found | Check the spelling, or that it is in the profile's tenant: ask for the WPP directory if it is a WPP account |
+| A section says unavailable | The signed-in account is not allowed to read it. That is not an empty result |
+| The tools appear twice | Remove the old `active-directory` or `active-directory-search` entry from `claude_desktop_config.json` (quit Claude Desktop first) |
+| `--status` says `Server: failed` | Run the install command again. If it keeps failing, the log it names (`~/Library/Logs/Claude/mcp-server-…`) says why |
+
+## Update and remove
+
+The extension checks the landing page once a day while **Check for updates** is on. When there is a new version,
+Claude shows an update card: **Update now** downloads it, checks its SHA-256 and opens Claude Desktop's install
+dialog; **Not now** hides that version for a week. Running the install command again also updates. Your settings and
+sign-ins are kept.
+
+To remove it, say *"Sign out of Entra Directory Search"* (once per profile), uninstall it in Claude Desktop
+(Settings > Extensions), then remove the download folder:
+
+```bash
+curl -fsSL https://wpp-jamie-mills.github.io/active-directory-search-site/install.sh | bash -s -- --uninstall
+```
+
+## Links
+
+- [Landing page](https://wpp-jamie-mills.github.io/active-directory-search-site/): install guides for people and agents
+- [Summary](https://wpp-jamie-mills.github.io/active-directory-search-site/summary.md): this project as one markdown page
+- [Installer](https://wpp-jamie-mills.github.io/active-directory-search-site/install.sh): the script the install command runs
